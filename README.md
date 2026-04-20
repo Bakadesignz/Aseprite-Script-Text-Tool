@@ -1,10 +1,8 @@
 Aseprite Script Text Tool 0.6 (https://aseprite.org).  
 Written by Augustin Clement a.k.a Bakadesign.  
 (https://bakadesign.itch.io/) (https://github.com/Bakadesignz).  
-Free to use or modify, a thanks/credit is appreciated if used in another project :)  
-This script is provided " AS IS", without warranty of any kind.  
 
-# Aseprite ScCript Text Tool
+# Aseprite Script Text Tool
 
 Write text on a sprite using script and your own alphabet
 
