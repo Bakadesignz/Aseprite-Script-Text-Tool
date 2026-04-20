@@ -1,0 +1,25 @@
+Aseprite Aseprite Script Text Tool - End User License Agreement (EULA)
+
+Copyright (c) 2026 Augustin Clement
+All rights reserved.
+
+By downloading "Aseprite Script Text Tool" (the "Software"), you are granted a non-exclusive licence to install and use the Software for the purpose 
+of creating scripts and digital art using Aseprite.
+The Software is the intellectual property of Augustin Clement. All rights, title, and interest in and to the Software, including all intellectual 
+property rights, remain with the Author.
+
+You may:
+- Use the Software to create commercial or non-commercial work. The work you create using this Software belongs entirely to you.
+- Modify the Software's code or integrate it as part of a bigger work. Create backup copies of the Software for your own personal archival purposes.
+
+You may NOT:
+- Redistribute, resell, sublicense, rent, lease, or lend the Software (neither the original nor your modified version) to any third party.
+- Upload the Software file directly to public file-sharing websites, torrent sites, forums, or repositories.
+- To share the tool with others, you must link directly to the official github.com / itch.io pages.
+- Include this Software in any paid or free asset packs, bundles, or software compilations.
+- Use the Software's code for AI training datasets.
+
+DISCLAIMER OF WARRANTY
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, 
+WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
