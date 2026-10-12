@@ -25,6 +25,11 @@ Write text on a sprite using script and your own alphabet
     - Normal is just the original version, but a lot more cumbersome
     - Alpha is to use if your alphabet has some levels of transparency
     - Alpha preserve up to 8 levels of transparency and cannot be "compact"
+5. You can also type a text and generate an image/text from it
+    - It's a workaround because fillText() is currently bugged on an image canvas
+    - You type a text, copy the table/code generated, also copy the drawWord function
+    - Paste that in your scrip, you can now draw that text by script on an image
+    - if the bugg is fixed in the future, this feature will become useless
 
 ## Notes
 
