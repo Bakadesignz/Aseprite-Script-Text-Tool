@@ -64,6 +64,8 @@ abcTable = {
 -- encType need to be the same type used to encode the alphabet initialy ("normal", "compact", "alpha")
 -- normal will be 1 and 0 (color or not), compact will group the 0 to give a smaller string result, alpha will preserve up to 9 steps of transparency
 function drawABC(info, codeImg)
+  if codeImg == nil then codeImg = abcCode end
+  if info == nil then info = abcInfo end
   local sizeImg = info["size"]
   local boundsImg = info["bounds"]
   local encType = info["encType"]
