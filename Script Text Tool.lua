@@ -9,8 +9,14 @@
 -- you can even switch some glyph for another fo convenience, for example in the alphabet.png :
 -- I entered the glyph (c) and assigned it to '§' in the abcTable. That way you can use custom glyphs associated to keyboard entry if needed.
 -- Finaly enter the dimension of a glyph/grid (8x8 in the example) and hit encode.
--- you now have 2 texts to pass in your script to start using your alphabet
+-- you now have 2 comments 'start' and 'end' to delimit the script to copy/paste in your script to start using your alphabet
 -- you will also need the abcTable, writext() and drawABC(), also the variables marked below ### start ### and ### end ###
+
+-- The testing allow you to play with the writeText() function and see how it could work in your script
+
+-- Encode Image is here to generate a string representing an image of a text. You can then draw the image with drawCode()
+-- It's a workaround, because at the moment (Oct 2026), fillText() does crash with the graphicsContext of an image.
+-- So you can setup some text/image to write on an image with script and embbeded that within the script.
 
 
 -- ### start ###  code to copy to your script for integration
@@ -56,6 +62,7 @@ abcTable = {
 
 -- Redraw the alphabet picture (from the abcCode) and store it at the init of the script (abcImg here). It will be used to write text.
 -- encType need to be the same type used to encode the alphabet initialy ("normal", "compact", "alpha")
+-- normal will be 1 and 0 (color or not), compact will group the 0 to give a smaller string result, alpha will preserve up to 9 steps of transparency
 function drawABC(info, codeImg)
   local sizeImg = info["size"]
   local boundsImg = info["bounds"]
@@ -154,8 +161,81 @@ function writeText(txt, origin, adjust, center, color, bgc, mg, bdc, thick)
 end
 -- you need to launch the function drawABC(abcInfo, abcCode), see the init part at the end of the script
 
--- ### end ### 
+-- ### end ### end of script to copy for integration
 
+function createWord(word)
+  local blk = abcInfo["glyph"]
+  local adj = (adjust == nil and 0 or adjust)
+  local length = utf8.len(word)
+  local cps = { utf8.codepoint(word, 1, -1) }
+  local col = Color(0,0,0,255)
+  local tempImg = Image(length*(blk[1]+adj), blk[2])
+  local tempChar = Image(blk[1],blk[2])
+  local charPos = {0, 0}
+  local offset = 0
+  local cut = 0
+  for c = 1, utf8.len(word), 1 do
+    charPos = abcTable[utf8.char(cps[c])]
+    for j = 0, (blk[2]-1), 1 do
+      for i = 0, (blk[1]-1-charPos[3]), 1 do
+        local pix = abcImg:getPixel((charPos[1]*blk[1])+i,(charPos[2]*blk[2])+j)
+        if app.pixelColor.rgbaA(pix) > 0 then tempChar:drawPixel(i, j, col) end
+      end
+    end
+    cut = cut + charPos[3]
+    tempImg:drawImage(tempChar, (c-1)*blk[1]-offset, 0)
+    tempChar:clear()
+    offset = offset + charPos[3] - adj
+  end
+  local rect = tempImg:shrinkBounds()
+  local imgStr = ""
+  local nb = 0
+  local pc = app.pixelColor
+  for it in tempImg:pixels(rect) do
+      if pc.rgbaA(it()) == 0 then
+        nb = nb + 1
+        if nb == 9 then imgStr=imgStr.."9" nb=0 end
+      else
+        if nb == 1 then imgStr=imgStr.."0" end
+        if nb > 1 then imgStr=imgStr..nb end
+        nb = 0
+        imgStr = imgStr .. "1"
+      end
+    end
+  return {{rect.width, rect.height}, imgStr}
+end
+
+function drawWord(wtab, color)
+  local img = Image(wtab[1][1], wtab[1][2])
+  local j = 0
+  local k = 0
+  local len = wtab[1][1]
+  for i = 1, string.len(wtab[2]), 1 do
+    local nb = tonumber(string.sub(wtab[2], i, i))
+    if nb == 1 then
+      img:drawPixel(k%len, j, color)
+      k = k+1
+    elseif nb == 0 then k=k+1 else k=k+nb end
+    if k >= len then k=k%len j=j+1 end
+  end
+  return img
+end
+
+local fstr = "function drawWord(wtab, color)\nlocal img = Image(wtab[1][1], wtab[1][2])\nlocal j = 0\nlocal k = 0\nlocal len = wtab[1][1]\nfor i = 1, string.len(wtab[2]), 1 do\nlocal nb = tonumber(string.sub(wtab[2], i, i))\nif nb == 1 then\nimg:drawPixel(k%%len, j, color)\nk = k+1\nelseif nb == 0 then k=k+1 else k=k+nb end\nif k >= len then k=k%%len j=j+1 end\nend\nreturn img\nend"
+
+function get_source_code(f)
+    local t = debug.getinfo (f)
+    if t.linedefined < 0 then print("source",t.source); return end
+    local name = t.source:gsub("^@","")
+    local i = 0
+    local text = {}
+    for line in io.lines(name) do
+     i=i+1
+     if i >= t.linedefined then text[#text+1] = line end
+     if i >= t.lastlinedefined then break end
+    end
+    return table.concat(text,"\n") 
+end
 
 -- Scan and encode the current cel/image to create a new set of datas for a new alphabet
 -- The alphabet.png was encoded and used in this script, you can create your own and encode it
@@ -210,9 +290,11 @@ end
 -- the dialog
 local dlg
 local DEFAULT_GROUP_TEXT = "Enter text"
+local wgc
 
 function showDialog()
   dlg = Dialog {title="Alphabet Utils", resizeable=false, hexpand=false, vexpand=false}
+  :tab{text="TESTING"}
   :separator{text = "Text Testing"}
   :newrow()
   :entry{id="test_text", label="Text :", text=DEFAULT_GROUP_TEXT, focus=false}
@@ -254,7 +336,8 @@ function showDialog()
           app.refresh()
       end
   }
-  :separator{text = "EncodIng Alphabet"}
+  :tab{text="ENCODING"}
+  :separator{text = "Encoding Alphabet"}
   :combobox{id ="etype", label="type", option="compact", options={"compact","alpha","normal"}}
   :entry{id="wglyph", label="Glyph size", text="8", focus=false}
   :entry{id="hglyph", text="8", focus=false}
@@ -268,7 +351,34 @@ function showDialog()
   :label{text="Datas to use in your script"}
   :entry{id="enc_txt", label="Copy encoding :", text=""}
   :entry{id="enc_info", label="Copy infos :", text=""}
-  dlg:show{wait=false, bounds=Rectangle(dlg.bounds["x"], dlg.bounds["y"], 200, 285)}
+  :tab{text="IMAGES"}
+  :separator{text = "Encoding text Images"}
+  :entry{id="encimg", label="Text", text="Enter your text", focus=false}
+  :button{text="Encode", focus=true,
+      onclick=function()
+        local imgtab = createWord(dlg.data.encimg)
+        local dimg = drawWord(imgtab, Color(255, 255, 255, 255))
+        wgc:drawImage(dimg, (wgc.width-dimg.width)/2, (wgc.height-dimg.height)/2)
+        dlg:modify{id="imgstr", text="{{"..imgtab[1][1]..","..imgtab[1][2].."},\""..imgtab[2].."\"}"}
+        app.refresh()
+      end
+  }
+  :canvas{ id = "example",
+    width = 146,
+    height = 20,
+    hexpand = false,
+    vexpand = false,
+    onpaint = function(ev)
+      wgc=ev.context wgc.strokeWidth=1 wgc.blendMode=BlendMode.NORMAL
+      wgc.color=Color(0,0,0,255) wgc:fillRect(Rectangle(0,0,wgc.width,wgc.height))
+    end
+  }
+  :separator{text = "Word Parameters for drawWord()"}
+  :entry{id="imgstr", label="String", text="IMG to str", focus=false}
+  :separator{text = "Function drawWord() to integrate"}
+  :entry{id="fnstr", label="Function", text=fstr, focus=false}
+  :endtabs{}
+  dlg:show{wait=false, bounds=Rectangle(dlg.bounds["x"], dlg.bounds["y"], 200, 193)}
 end
 
 -- Init the alphabet then the dialog
