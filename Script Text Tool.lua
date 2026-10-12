@@ -165,7 +165,58 @@ end
 
 -- ### end ### end of script to copy for integration
 
-function createWord(word)
+
+-- Scan and encode the current cel/image to create a new set of datas for a new alphabet
+-- The alphabet.png was encoded and used in this script, you can create your own and encode it
+function encodeABC(encType, wg, hg, fields)
+  local Img
+  if app.image == nil then
+    app.alert("No image/cell selected")
+    return
+  else
+    Img = app.image
+  end
+  local pc = app.pixelColor
+  local cell = app.cel
+  local bds = cell.image:shrinkBounds()
+  local abcStr = "local abcInfo = {[\"encType\"]="..encType..", ".."[\"glyph\"]={"..wg..","..hg.."}, "
+  local imgStr = ""
+  if encType == "compact" then
+    local nb = 0
+    for it in Img:pixels() do
+      if pc.rgbaA(it()) == 0 then
+        nb = nb + 1
+        if nb == 9 then imgStr=imgStr.."9" nb=0 end
+      else
+        if nb == 1 then imgStr=imgStr.."0" end
+        if nb > 1 then imgStr=imgStr..nb end
+        nb = 0
+        imgStr = imgStr .. "1"
+      end
+    end
+  elseif encType == "alpha" then
+    local nb = 0
+    for it in Img:pixels() do
+      local al = pc.rgbaA(it())
+      if al == 0 then imgStr = imgStr .. "0"
+      elseif al == 255 then imgStr = imgStr .. "1"
+      else
+        nb = math.max(math.floor(al/32+1.5))
+        imgStr = imgStr..nb
+      end
+    end
+  elseif encType == "normal" then
+    for it in Img:pixels() do
+      if pc.rgbaA(it()) == 0 then imgStr = imgStr .. "0" else imgStr = imgStr .. "1" end
+    end
+  end
+  fields[1]:modify{id="enc_txt", text="hello"}
+  abcStr = abcStr.."[\"size\"]={"..sprite.width..","..sprite.height.."}, ".."[\"bounds\"]={"..bds.x..","..bds.y..","..bds.w..","..bds.h.."}}"
+  fields[1]:modify{id = fields[2], text = "local abcCode = \""..imgStr.."\""}
+  fields[1]:modify{id = fields[3], text = abcStr}
+end
+
+function createWord(word, adjust)
   local blk = abcInfo["glyph"]
   local adj = (adjust == nil and 0 or adjust)
   local length = utf8.len(word)
@@ -239,55 +290,6 @@ function get_source_code(f)
     return table.concat(text,"\n") 
 end
 
--- Scan and encode the current cel/image to create a new set of datas for a new alphabet
--- The alphabet.png was encoded and used in this script, you can create your own and encode it
-function encodeABC(encType, wg, hg, fields)
-  local Img
-  if app.image == nil then
-    app.alert("No image/cell selected")
-    return
-  else
-    Img = app.image
-  end
-  local pc = app.pixelColor
-  local cell = app.cel
-  local bds = cell.image:shrinkBounds()
-  local abcStr = "local abcInfo = {[\"encType\"]="..encType..", ".."[\"glyph\"]={"..wg..","..hg.."}, "
-  local imgStr = ""
-  if encType == "compact" then
-    local nb = 0
-    for it in Img:pixels() do
-      if pc.rgbaA(it()) == 0 then
-        nb = nb + 1
-        if nb == 9 then imgStr=imgStr.."9" nb=0 end
-      else
-        if nb == 1 then imgStr=imgStr.."0" end
-        if nb > 1 then imgStr=imgStr..nb end
-        nb = 0
-        imgStr = imgStr .. "1"
-      end
-    end
-  elseif encType == "alpha" then
-    local nb = 0
-    for it in Img:pixels() do
-      local al = pc.rgbaA(it())
-      if al == 0 then imgStr = imgStr .. "0"
-      elseif al == 255 then imgStr = imgStr .. "1"
-      else
-        nb = math.max(math.floor(al/32+1.5))
-        imgStr = imgStr..nb
-      end
-    end
-  elseif encType == "normal" then
-    for it in Img:pixels() do
-      if pc.rgbaA(it()) == 0 then imgStr = imgStr .. "0" else imgStr = imgStr .. "1" end
-    end
-  end
-  fields[1]:modify{id="enc_txt", text="hello"}
-  abcStr = abcStr.."[\"size\"]={"..sprite.width..","..sprite.height.."}, ".."[\"bounds\"]={"..bds.x..","..bds.y..","..bds.w..","..bds.h.."}}"
-  fields[1]:modify{id = fields[2], text = "local abcCode = \""..imgStr.."\""}
-  fields[1]:modify{id = fields[3], text = abcStr}
-end
 
 -- the dialog
 local dlg
@@ -337,7 +339,7 @@ function showDialog()
           app.transaction("write_text", function() writeText(UId.test_text, Point( UId.posx, UId.posy), UId.char_spacing, 0, UId.txtcol, bgc, bgmg, bdc, bdth) end)
           app.refresh()
       end
-  }
+  }:separator{}
   :tab{text="ENCODING"}
   :separator{text = "Encoding Alphabet"}
   :combobox{id ="etype", label="type", option="compact", options={"compact","alpha","normal"}}
@@ -350,16 +352,18 @@ function showDialog()
           app.refresh()
       end
   }
-  :label{text="Datas to use in your script"}
+  :separator{text="Datas to use in your script"}
   :entry{id="enc_txt", label="Copy encoding :", text=""}
   :entry{id="enc_info", label="Copy infos :", text=""}
   :tab{text="IMAGES"}
   :separator{text = "Encoding text Images"}
   :entry{id="encimg", label="Text", text="Enter your text", focus=false}
+  :slider{id="txtspace", label="spacing", min=-2, max=2, value=0}
   :button{text="Encode", focus=true,
       onclick=function()
-        local imgtab = createWord(dlg.data.encimg)
+        local imgtab = createWord(dlg.data.encimg, dlg.data.txtspace)
         local dimg = drawWord(imgtab, Color(255, 255, 255, 255))
+        wgc.color=Color(0,0,0,255) wgc:fillRect(Rectangle(0,0,wgc.width,wgc.height))
         wgc:drawImage(dimg, (wgc.width-dimg.width)/2, (wgc.height-dimg.height)/2)
         dlg:modify{id="imgstr", text="{{"..imgtab[1][1]..","..imgtab[1][2].."},\""..imgtab[2].."\"}"}
         app.refresh()
@@ -380,7 +384,7 @@ function showDialog()
   :separator{text = "Function drawWord() to integrate"}
   :entry{id="fnstr", label="Function", text=fstr, focus=false}
   :endtabs{}
-  dlg:show{wait=false, bounds=Rectangle(dlg.bounds["x"], dlg.bounds["y"], 200, 193)}
+  dlg:show{wait=false, bounds=Rectangle(dlg.bounds["x"], dlg.bounds["y"], 200, 213)}
 end
 
 -- Init the alphabet then the dialog
