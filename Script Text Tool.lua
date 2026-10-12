@@ -274,21 +274,8 @@ function drawWord(wtab, color)
   return img
 end
 
+-- the drawWord function in a string form, so it can be displayed in the dialog
 local fstr = "function drawWord(wtab, color)\nlocal img = Image(wtab[1][1], wtab[1][2])\nlocal j = 0\nlocal k = 0\nlocal len = wtab[1][1]\nfor i = 1, string.len(wtab[2]), 1 do\nlocal nb = tonumber(string.sub(wtab[2], i, i))\nif nb == 1 then\nimg:drawPixel(k%%len, j, color)\nk = k+1\nelseif nb == 0 then k=k+1 else k=k+nb end\nif k >= len then k=k%%len j=j+1 end\nend\nreturn img\nend"
-
-function get_source_code(f)
-    local t = debug.getinfo (f)
-    if t.linedefined < 0 then print("source",t.source); return end
-    local name = t.source:gsub("^@","")
-    local i = 0
-    local text = {}
-    for line in io.lines(name) do
-     i=i+1
-     if i >= t.linedefined then text[#text+1] = line end
-     if i >= t.lastlinedefined then break end
-    end
-    return table.concat(text,"\n") 
-end
 
 
 -- the dialog
